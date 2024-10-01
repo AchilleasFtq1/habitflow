@@ -1,4 +1,28 @@
 {
-  "name": "HabitFlow",
-  "displayName": "HabitFlow"
+  "expo": {
+    "name": "HabitFlow",
+    "slug": "habitflow",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/habitflow_icon.png",
+    "splash": {
+      "image": "./assets/habitflow_splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/habitflow_adaptive_icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "platforms": ["ios", "android", "web"]
+  }
 }

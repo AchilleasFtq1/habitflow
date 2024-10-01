@@ -2,8 +2,8 @@
  * @format
  */
 
-import {AppRegistry} from 'react-native';
-import App from './App';
-import {name as appName} from './app.json';
+import {registerRootComponent} from 'expo';
+import App from './App'; // Ensure this is the correct path to App.tsx
 
-AppRegistry.registerComponent(appName, () => App);
+// This will ensure your app works in both Expo Go and in a native build
+registerRootComponent(App);
