@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useNavigation} from '@react-navigation/native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
 import React, {useEffect, useState} from 'react';
 import {
   FlatList,
@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
+import {RootStackParamList} from '../navigation/AppNavigator'; // Ensure this exists and is correctly typed
 
 interface Habit {
   name: string;
@@ -18,7 +19,7 @@ interface Habit {
 
 const CurrentHabitsScreen = () => {
   const [activeHabits, setActiveHabits] = useState<Habit[]>([]);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Correctly typed navigation
 
   // Load active habit data from AsyncStorage (habits without a streak or completion history)
   const loadActiveHabits = async () => {
@@ -48,7 +49,8 @@ const CurrentHabitsScreen = () => {
             <TouchableOpacity
               onPress={() =>
                 navigation.navigate('HabitDetailScreen', {habit: item})
-              }>
+              } // Ensure habit is passed correctly
+            >
               <Text style={styles.habitItem}>{item.name}</Text>
             </TouchableOpacity>
           )}
@@ -68,6 +70,7 @@ const styles = StyleSheet.create({
   habitItem: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
 

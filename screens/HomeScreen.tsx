@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {Picker} from '@react-native-picker/picker';
-import {useNavigation} from '@react-navigation/native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import LottieView from 'lottie-react-native';
 import React, {useEffect, useState} from 'react';
@@ -16,6 +16,7 @@ import {
 import {Button, TextInput, Title} from 'react-native-paper';
 import HabitCard from '../components/HabitCard';
 import HabitForm from '../components/HabitForm';
+import {RootStackParamList} from '../navigation/AppNavigator'; // Ensure this exists
 
 interface Habit {
   name: string;
@@ -35,14 +36,14 @@ export default function HomeScreen() {
   const [habitCategory, setHabitCategory] = useState('Health');
   const [reminderFrequency, setReminderFrequency] = useState('daily');
   const [customInterval, setCustomInterval] = useState(3);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Typed navigation
 
   // Load habits from AsyncStorage when the screen is first loaded
   useEffect(() => {
     const loadHabits = async () => {
       try {
         const savedHabits = await AsyncStorage.getItem('@habits');
-        if (savedHabits !== null) {
+        if (savedHabits) {
           setHabits(JSON.parse(savedHabits));
         }
       } catch (e) {
@@ -65,7 +66,7 @@ export default function HomeScreen() {
 
   // Add a new habit with categories, reminders, and completion history
   const addHabit = (name: string) => {
-    const newHabit = {
+    const newHabit: Habit = {
       name,
       streak: 0,
       category: habitCategory,
@@ -80,13 +81,18 @@ export default function HomeScreen() {
     saveHabits(newHabits);
   };
 
-  const handleTimePickerChange = (event, selectedTime) => {
+  // Handle Time Picker Changes
+  const handleTimePickerChange = (
+    event: unknown,
+    selectedDate?: Date | undefined,
+  ) => {
     setShowPicker(false);
-    if (selectedTime) {
-      setReminderTime(selectedTime);
+    if (selectedDate) {
+      setReminderTime(selectedDate);
     }
   };
 
+  // Mark habit as completed
   const completeHabit = (habit: Habit) => {
     const today = new Date().toLocaleDateString();
     const updatedHabits = habits.map(h => {
@@ -103,6 +109,7 @@ export default function HomeScreen() {
     setCompleted(true); // Show success animation
   };
 
+  // Schedule a notification
   const scheduleNotification = async (habit: Habit) => {
     let trigger = {};
     const time = habit.reminderTime || new Date();
@@ -147,7 +154,8 @@ export default function HomeScreen() {
               />
               <Button
                 mode="contained"
-                onPress={() => scheduleNotification(habit)}>
+                onPress={() => scheduleNotification(habit)}
+                style={styles.button}>
                 Set Reminder
               </Button>
             </View>
