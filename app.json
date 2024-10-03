@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "habitflowv2",
+    "name": "habitflow",
     "slug": "habitflowv2",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/habitflow_icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
+      "image": "./assets/images/habitflow_splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,21 +16,26 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "cy.com.habitflow",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/habitflow_icon.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/habitflow_icon.png"
     },
-    "plugins": [
-      "expo-router"
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2a8198f4-97c4-4323-ab2f-e1f4930c2acd"
+      }
+    },
+    "owner": "aeftychiou"
   }
 }
