@@ -1,23 +1,24 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import {Picker} from '@react-native-picker/picker';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Picker } from "@react-native-picker/picker";
 import {
   NavigationProp,
   useFocusEffect,
   useNavigation,
-} from '@react-navigation/native';
-import React, {useCallback, useState} from 'react';
+} from "@react-navigation/native";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
   Modal,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import {Button, TextInput, Title} from 'react-native-paper';
-import HabitCard from '../components/HabitCard';
+} from "react-native";
+import { Button, TextInput, Title } from "react-native-paper";
+import HabitCard from "../components/HabitCard";
 
 interface Habit {
   name: string;
@@ -29,16 +30,16 @@ interface Habit {
 }
 
 interface ProgressData {
-  day: string;
+  day: string; // Date string in the format 'YYYY-MM-DD'
   habitsCompleted: number;
 }
 
-export default function HomeScreen() {
+const HomeScreen = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
-  const [habitName, setHabitName] = useState('');
+  const [habitName, setHabitName] = useState("");
   const [habitCategory, setHabitCategory] = useState<string | null>(null);
   const [reminderFrequency, setReminderFrequency] = useState<string | null>(
-    null,
+    null
   );
   const [reminderTime, setReminderTime] = useState<Date | null>(new Date());
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,66 +50,62 @@ export default function HomeScreen() {
   // Load habits from AsyncStorage
   const loadHabits = async () => {
     try {
-      const savedHabits = await AsyncStorage.getItem('@habits');
+      const savedHabits = await AsyncStorage.getItem("@habits");
       if (savedHabits) {
         setHabits(JSON.parse(savedHabits));
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to load habits');
+      Alert.alert("Error", "Failed to load habits");
     }
   };
 
   // Save habits to AsyncStorage
   const saveHabits = async (newHabits: Habit[]) => {
     try {
-      await AsyncStorage.setItem('@habits', JSON.stringify(newHabits));
+      await AsyncStorage.setItem("@habits", JSON.stringify(newHabits));
     } catch (e) {
-      Alert.alert('Error', 'Failed to save habits');
-    }
-  };
-
-  // Save progress data to AsyncStorage
-  const saveProgressData = async (progressData: ProgressData[]) => {
-    try {
-      await AsyncStorage.setItem(
-        '@progress_data',
-        JSON.stringify(progressData),
-      );
-    } catch (e) {
-      Alert.alert('Error', 'Failed to save progress');
+      Alert.alert("Error", "Failed to save habits");
     }
   };
 
   // Load progress data from AsyncStorage
   const loadProgressData = async (): Promise<ProgressData[]> => {
     try {
-      const savedProgress = await AsyncStorage.getItem('@progress_data');
+      const savedProgress = await AsyncStorage.getItem("@progress_data");
       return savedProgress ? JSON.parse(savedProgress) : [];
     } catch (e) {
-      Alert.alert('Error', 'Failed to load progress data');
+      console.error("Error loading progress data", e);
       return [];
     }
   };
 
-  // Load habits initially and on focus
+  // Save progress data to AsyncStorage
+  const saveProgressData = async (newProgress: ProgressData[]) => {
+    try {
+      await AsyncStorage.setItem("@progress_data", JSON.stringify(newProgress));
+    } catch (e) {
+      Alert.alert("Error", "Failed to save progress data");
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
       loadHabits();
-    }, []),
+    }, [])
   );
 
   // Add a new habit
   const addHabit = () => {
     if (!habitName) {
-      Alert.alert('Error', 'Please enter a habit name');
+      Alert.alert("Error", "Please enter a habit name");
       return;
     }
-    if (!habitCategory || habitCategory === 'Select Category') {
-      Alert.alert('Error', 'Please select a category');
+    if (!habitCategory || habitCategory === "Select Category") {
+      Alert.alert("Error", "Please select a category");
       return;
     }
-    if (!reminderFrequency || reminderFrequency === 'Select Frequency') {
-      Alert.alert('Error', 'Please select a reminder frequency');
+    if (!reminderFrequency || reminderFrequency === "Select Frequency") {
+      Alert.alert("Error", "Please select a reminder frequency");
       return;
     }
 
@@ -124,56 +121,44 @@ export default function HomeScreen() {
     setHabits(newHabits);
     saveHabits(newHabits);
     setModalVisible(false);
-    setHabitName('');
+    setHabitName("");
     setHabitCategory(null);
     setReminderFrequency(null);
   };
 
-  // Complete a habit and track progress
+  // Complete a habit and update progress
   const completeHabit = async (habit: Habit) => {
-    const today = new Date().toLocaleDateString(); // Get today's date
+    const today = new Date().toISOString().split("T")[0]; // Format as YYYY-MM-DD
+    let updatedProgress = await loadProgressData();
 
-    const updatedHabits = habits.map(h => {
+    // Check if progress data for today exists
+    const todayProgress = updatedProgress.find((p) => p.day === today);
+    if (todayProgress) {
+      todayProgress.habitsCompleted += 1;
+    } else {
+      updatedProgress.push({ day: today, habitsCompleted: 1 });
+    }
+
+    // Save the updated progress
+    await saveProgressData(updatedProgress);
+
+    // Update the habits
+    const updatedHabits = habits.map((h) => {
       if (h.name === habit.name) {
-        const history = h.history || [];
-
-        if (!history.includes(today)) {
-          h.streak += 1;
-          history.push(today); // Add today's date to the history
-          h.history = history;
-        } else {
-          Alert.alert(
-            'Already completed',
-            'You have already completed this habit today.',
-          );
-        }
+        h.streak += 1;
+        h.history.push(today); // Add today's date to the history
       }
       return h;
     });
 
     setHabits(updatedHabits);
     saveHabits(updatedHabits);
-
-    // Update the progress
-    const progressData = await loadProgressData();
-    const todayProgress = progressData.find(p => p.day === today);
-
-    if (todayProgress) {
-      todayProgress.habitsCompleted += 1; // Increment habits completed for today
-    } else {
-      progressData.push({day: today, habitsCompleted: 1}); // First completion today
-    }
-
-    saveProgressData(progressData);
   };
 
-  // Show the last two habits
-  const lastTwoHabits = habits.slice(-2);
-
-  // Handle time picker changes
+  // Handle time picker for native
   const handleTimePickerChange = (
     event: unknown,
-    selectedDate?: Date | undefined,
+    selectedDate?: Date | undefined
   ) => {
     setShowTimePicker(false);
     if (selectedDate) {
@@ -181,20 +166,70 @@ export default function HomeScreen() {
     }
   };
 
+  // Handle time picker for web
+  const handleTimePickerChangeWeb = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedTime = event.target.value;
+    if (selectedTime) {
+      const [hours, minutes] = selectedTime.split(":");
+      const newDate = new Date();
+      newDate.setHours(parseInt(hours, 10));
+      newDate.setMinutes(parseInt(minutes, 10));
+      setReminderTime(newDate);
+    }
+  };
+
+  // Render time picker based on platform
+  const renderTimePicker = () => {
+    if (Platform.OS === "web") {
+      return (
+        <input
+          type="time"
+          value={
+            reminderTime ? reminderTime.toISOString().substring(11, 16) : ""
+          }
+          onChange={handleTimePickerChangeWeb}
+          style={styles.timeInput}
+        />
+      );
+    }
+
+    return (
+      <>
+        <Button
+          mode="outlined"
+          onPress={() => setShowTimePicker(true)}
+          style={styles.addButton}
+        >
+          Set Reminder Time
+        </Button>
+        {showTimePicker && (
+          <DateTimePicker
+            value={reminderTime || new Date()}
+            mode="time"
+            display="default"
+            onChange={handleTimePickerChange}
+          />
+        )}
+      </>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <Title style={styles.title}>Your Habits</Title>
 
-        {lastTwoHabits.length > 0 ? (
-          lastTwoHabits.map((habit, index) => (
+        {habits.length > 0 ? (
+          habits.slice(-2).map((habit, index) => (
             <View key={index}>
               <HabitCard
                 habit={habit}
-                onComplete={() => completeHabit(habit)} // Complete Habit Functionality
+                onComplete={() => completeHabit(habit)}
                 onDelete={() => {
                   const updatedHabits = habits.filter(
-                    h => h.name !== habit.name,
+                    (h) => h.name !== habit.name
                   );
                   setHabits(updatedHabits);
                   saveHabits(updatedHabits);
@@ -206,28 +241,28 @@ export default function HomeScreen() {
           <Text>No habits yet. Add a new habit to get started!</Text>
         )}
 
-        {/* Add New Habit Button */}
         <Button
           mode="contained"
           onPress={() => setModalVisible(true)}
-          style={styles.button}>
+          style={styles.button}
+        >
           Add New Habit
         </Button>
 
-        {/* View Active Habits Button */}
         <Button
           mode="contained"
-          onPress={() => navigation.navigate('CurrentHabitsScreen')}
-          style={styles.button}>
+          onPress={() => navigation.navigate("CurrentHabitsScreen")}
+          style={styles.button}
+        >
           View Active Habits
         </Button>
 
-        {/* Modal for adding a new habit */}
         <Modal
           animationType="slide"
-          transparent={true}
+          transparent
           visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}>
+          onRequestClose={() => setModalVisible(false)}
+        >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <TextInput
@@ -238,12 +273,12 @@ export default function HomeScreen() {
                 style={styles.input}
               />
 
-              {/* Category Picker */}
               <View style={styles.pickerWrapper}>
                 <Picker
                   selectedValue={habitCategory}
-                  onValueChange={itemValue => setHabitCategory(itemValue)}
-                  style={styles.picker}>
+                  onValueChange={(itemValue) => setHabitCategory(itemValue)}
+                  style={styles.picker}
+                >
                   <Picker.Item label="Select Category" value={null} />
                   <Picker.Item label="Health" value="Health" />
                   <Picker.Item label="Work" value="Work" />
@@ -254,12 +289,12 @@ export default function HomeScreen() {
                 </Picker>
               </View>
 
-              {/* Reminder Frequency Picker */}
               <View style={styles.pickerWrapper}>
                 <Picker
                   selectedValue={reminderFrequency}
-                  onValueChange={itemValue => setReminderFrequency(itemValue)}
-                  style={styles.picker}>
+                  onValueChange={(itemValue) => setReminderFrequency(itemValue)}
+                  style={styles.picker}
+                >
                   <Picker.Item label="Select Frequency" value={null} />
                   <Picker.Item label="Daily" value="daily" />
                   <Picker.Item label="Weekly" value="weekly" />
@@ -267,34 +302,21 @@ export default function HomeScreen() {
                 </Picker>
               </View>
 
-              {/* Time Picker Button */}
-              <Button
-                mode="outlined"
-                onPress={() => setShowTimePicker(true)}
-                style={styles.addButton}>
-                Set Reminder Time
-              </Button>
+              {renderTimePicker()}
 
-              {showTimePicker && (
-                <DateTimePicker
-                  value={reminderTime || new Date()}
-                  mode="time"
-                  display="default"
-                  onChange={handleTimePickerChange}
-                />
-              )}
-
-              {/* Add and Close Buttons */}
               <Button
                 mode="contained"
                 onPress={addHabit}
-                style={styles.addButton}>
+                style={styles.addButton}
+              >
                 Add Habit
               </Button>
+
               <Button
                 mode="contained"
                 onPress={() => setModalVisible(false)}
-                style={styles.closeButton}>
+                style={styles.closeButton}
+              >
                 Close
               </Button>
             </View>
@@ -303,57 +325,65 @@ export default function HomeScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   title: {
     fontSize: 24,
-    textAlign: 'center',
+    textAlign: "center",
     marginVertical: 20,
-    color: '#4a90e2',
+    color: "#4a90e2",
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginBottom: 15,
   },
   picker: {
     height: 50,
-    width: '100%',
+    width: "100%",
+  },
+  timeInput: {
+    marginVertical: 10,
+    height: 40,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   button: {
     marginVertical: 10,
-    backgroundColor: '#4a90e2',
+    backgroundColor: "#4a90e2",
   },
   addButton: {
     marginVertical: 10,
-    backgroundColor: '#4a90e2',
+    backgroundColor: "#4a90e2",
   },
   closeButton: {
     marginVertical: 10,
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
   },
   input: {
     marginBottom: 20,
   },
   modalContainer: {
     flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
     margin: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 10,
     padding: 35,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -363,3 +393,5 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
 });
+
+export default HomeScreen;

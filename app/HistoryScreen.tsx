@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {useEffect, useState} from 'react';
-import {FlatList, SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native"; // Handles screen focus events
+import React, { useCallback, useState } from "react";
+import { FlatList, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 interface Habit {
   name: string;
@@ -14,7 +15,7 @@ export default function HistoryScreen() {
   // Load habit data from AsyncStorage
   const loadHabits = async () => {
     try {
-      const storedHabits = await AsyncStorage.getItem('@habits');
+      const storedHabits = await AsyncStorage.getItem("@habits");
       if (storedHabits !== null) {
         const parsedHabits = JSON.parse(storedHabits);
 
@@ -27,21 +28,24 @@ export default function HistoryScreen() {
         setHabits(sanitizedHabits);
       }
     } catch (error) {
-      console.error('Failed to load habit data:', error);
+      console.error("Failed to load habit data:", error);
     }
   };
 
-  useEffect(() => {
-    loadHabits();
-  }, []);
+  // Reload the habits each time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadHabits();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       {habits.length > 0 ? (
         <FlatList
           data={habits}
-          keyExtractor={item => item.name}
-          renderItem={({item}) => (
+          keyExtractor={(item) => item.name}
+          renderItem={({ item }) => (
             <View style={styles.card}>
               <Text style={styles.title}>{item.name}</Text>
               <Text style={styles.streak}>
@@ -71,50 +75,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
     marginBottom: 15,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
   },
   title: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 8,
   },
   streak: {
     fontSize: 16,
-    color: '#4a90e2',
+    color: "#4a90e2",
     marginBottom: 10,
   },
   historyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4a90e2',
+    fontWeight: "bold",
+    color: "#4a90e2",
     marginTop: 10,
     marginBottom: 5,
   },
   historyItem: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginVertical: 2,
   },
   noHistory: {
     fontSize: 14,
-    color: '#999',
+    color: "#999",
   },
   noHabits: {
     fontSize: 18,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginTop: 20,
   },
 });
